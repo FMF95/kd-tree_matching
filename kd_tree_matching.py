@@ -5,6 +5,7 @@ Script para emparejar nodos entre dos listas en formato CSV utilizando un KD-Tre
 
 import argparse
 import csv
+from typing import List, Union
 from scipy.spatial import KDTree
 
 def parse_args():
@@ -31,7 +32,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_nodes_csv(file_path):
+def load_nodes_csv(file_path: str) -> List[List[Union[int, float]]]:
     """
     Carga nodos desde un archivo CSV, ignorando la cabecera (primera línea).
     El archivo debe contener líneas en el formato: ID, x, y, z.
@@ -47,7 +48,7 @@ def load_nodes_csv(file_path):
     return nodes
 
 
-def create_kdtree(points):
+def create_kdtree(points: List[List[Union[int, float]]]) -> KDTree:
     """
     Crear un KD-Tree utilizando las coordenadas de una lista de nodos.
     Cada nodo tiene la forma [ID, x, y, z].
@@ -57,7 +58,7 @@ def create_kdtree(points):
     return tree
 
 
-def nearest_neighbor_matching(points_a, points_b):
+def nearest_neighbor_matching(points_a: List[List[Union[int, float]]], points_b: List[List[Union[int, float]]]) -> List[tuple[int, int]]:
     """
     Encuentra los vecinos más cercanos de forma inyectiva (sin reutilización de nodos).
     """
@@ -66,7 +67,7 @@ def nearest_neighbor_matching(points_a, points_b):
     matches = []  # Lista de emparejamientos
 
     for point_a in points_a:
-        distances, indices = tree_b.query(point_a[1:], k=len(points_b))
+        _, indices = tree_b.query(point_a[1:], k=len(points_b))
 
         # Buscar el vecino más cercano no reutilizado
         for idx in indices:
@@ -79,7 +80,7 @@ def nearest_neighbor_matching(points_a, points_b):
     return matches
 
 
-def save_matches_csv(matches, file_path):
+def save_matches_csv(matches: List[tuple[int, int]], file_path: str) -> None:
     """
     Guarda los emparejamientos en un archivo CSV.
     Cada línea tiene la forma: ID_A, ID_B.
