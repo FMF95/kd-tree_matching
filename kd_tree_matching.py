@@ -58,36 +58,37 @@ def create_kdtree(points: List[List[Union[int, float]]]) -> KDTree:
     return tree
 
 
-def nearest_neighbor_matching(points_a: List[List[Union[int, float]]], points_b: List[List[Union[int, float]]]) -> List[tuple[int, int]]:
+def nearest_neighbor_matching(points_a, points_b):
     """
     Encuentra los vecinos más cercanos de forma inyectiva (sin reutilización de nodos).
+    Incluye la distancia entre los nodos en el emparejamiento.
     """
-    tree_b = create_kdtree(points_b)  # Crear KD-Tree para los nodos de B
-    used_ids = set()  # IDs ya usados
+    tree_b = create_kdtree(points_b)
+    used_ids = set()  # IDs ya utilizados
     matches = []  # Lista de emparejamientos
 
     for point_a in points_a:
-        _, indices = tree_b.query(point_a[1:], k=len(points_b))
+        distances, indices = tree_b.query(point_a[1:], k=len(points_b))
 
-        # Buscar el vecino más cercano no reutilizado
-        for idx in indices:
+        # Buscar el vecino más cercano que no esté reutilizado
+        for idx, distance in zip(indices, distances):
             neighbor = points_b[idx]
             if neighbor[0] not in used_ids:
-                matches.append((point_a[0], neighbor[0]))  # Almacena (ID_A, ID_B)
-                used_ids.add(neighbor[0])
+                # Guardar la pareja con la distancia
+                matches.append((point_a[0], neighbor[0], distance))  # (ID_A, ID_B, distancia)
+                used_ids.add(neighbor[0])  # Marcar como utilizado el nodo de B
                 break
 
     return matches
 
 
-def save_matches_csv(matches: List[tuple[int, int]], file_path: str) -> None:
+def save_matches_csv(matches, file_path):
     """
-    Guarda los emparejamientos en un archivo CSV.
-    Cada línea tiene la forma: ID_A, ID_B.
+    Guarda los emparejamientos (ID_A, ID_B, distancia) en un archivo CSV.
     """
     with open(file_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["ID_A", "ID_B"])  # Escribir cabecera opcional
+        writer.writerow(["ID_A", "ID_B", "Distance"])  # Cabecera
         writer.writerows(matches)
 
 
