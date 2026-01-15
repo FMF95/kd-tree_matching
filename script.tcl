@@ -38,11 +38,28 @@ foreach list $list_names {
 
 # Ejecutar el script de Python
 set pypath "[file join $ScriptDir "matching.py"]"
+set pycpath "[file join $ScriptDir "matching.cpython-311.pyc"]"
 set list_a_path "[file join $ScriptDir "node_list_a.csv"]"
 set list_b_path "[file join $ScriptDir "node_list_b.csv"]"
 set output_path "[file join $ScriptDir "matching.csv"]"
+
+# Verificar si el archivo .py o .pyc existe
+if {[catch {file exists $pypath} exists1] || !$exists1} {
+
+    if {[catch {file exists $pycpath} exists2] || !$exists2} {
+        error "No se encontró ninguno de los archivos:\n$pypath\n$pycpath"
+    } else {
+        set matchpath $pycpath
+    }
+
+} else {
+    set matchpath $pypath
+}
+#puts "Usando archivo: $matchpath"
+
+# Construir el comando
 set command ""
-append command "python" " " "\"$pypath\"" " " "\"$list_a_path\"" " " "\"$list_b_path\"" " " "--output" " " "\"$output_path\""
+append command "python" " " "\"$matchpath\"" " " "\"$list_a_path\"" " " "\"$list_b_path\"" " " "--output" " " "\"$output_path\""
 
 # Ejecutar el comando
 #puts $command
@@ -75,21 +92,27 @@ while {[gets $outfile line] >= 0} {
 close $outfile
 
 # Crear componente para visualizar las distancias
-*createentity comps includeid=0 name=^Distance
-*createmark components 1 "^Distance"
+if { ![catch { *createentity comps includeid=0 name=^distance_marks }] } {
+	*currentcollector components "^distance_marks"
+}
+*createmark elems 1 "by collector name" "^distance_marks"
+if { [hm_marklength elems 1] > 0 } { *deletemark elems 1 }
+*clearmark elems 1
+*createmark components 1 "^distance_marks"
 *setvalue comps mark=1 color=6
 *clearmark components 1
 *createmark tags 1 "by name" ^Measure:
-*tagtextdisplaymode 3
 
 # Crear líneas entre los nodos emparejados
+*tagtextdisplaymode 3
 foreach id_a $ID_A id_b $ID_B distance $Distance {
     puts "ID_A: $id_a, ID_B: $id_b, Distance: $distance"
     *createlist nodes 1 $id_a $id_b
     *createelement 2 1 1 1
     set plotid [hm_latestentityid elems]
-    #*tag($plotid,$plotid,2,6,"$distance","RightFront")
-
+    #*createmark elems 1 1
+    #*tagcreate elems 1 "tag_text"
+    #*setvalue tags id=5 color=6
 }
 
 return
