@@ -104,15 +104,29 @@ if { [hm_marklength elems 1] > 0 } { *deletemark elems 1 }
 *createmark tags 1 "by name" ^Measure:
 
 # Crear líneas entre los nodos emparejados
-*tagtextdisplaymode 3
+*tagtextdisplaymode 1
 foreach id_a $ID_A id_b $ID_B distance $Distance {
+    
     puts "ID_A: $id_a, ID_B: $id_b, Distance: $distance"
-    *createlist nodes 1 $id_a $id_b
-    *createelement 2 1 1 1
-    set plotid [hm_latestentityid elems]
-    #*createmark elems 1 1
-    #*tagcreate elems 1 "tag_text"
-    #*setvalue tags id=5 color=6
+    
+    # Para evitar crear erores si las listas son iguales
+    if {[catch {
+        *createlist nodes 1 $id_a $id_b
+        *createelement 2 1 1 1
+        set plotid [hm_latestentityid elems]
+        puts "Created element ID: $plotid"
+        *createmark elems 1 $plotid
+        *tagcreate elements 1 "Distance" "" 0
+        set tagid [hm_latestentityid tags]
+        *setvalue tags id=$tagid color=6
+        set distance_formatted [format "%.6f" $distance]
+        *setvalue tags id=$tagid body="$distance_formatted"
+        *setvalue tags id=$tagid description="Node1: $id_a Node2: $id_b"
+        *setvalue tags id=$tagid entity={elems $plotid}
+    } errMsg]} {
+        puts "⚠️ Error procesando A=$id_a B=$id_b: $errMsg"
+    }
+
 }
 
 return
